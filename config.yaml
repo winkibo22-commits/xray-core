@@ -1,0 +1,33 @@
+# Upsun Cloud — xray-core as a public Docker image app.
+# Official docs: https://developer.upsun.com/docs/add-services/docker-images
+#
+# HOW config.json GETS IN (read the docs first):
+# - A Docker image app is deployed EXACTLY AS-IS. Upsun does NOT build a
+#   Dockerfile from the repo for this app type, build hooks are not
+#   supported, and the project repo is NOT mounted into the container.
+# - So the stock ghcr.io/xtls/xray-core:latest image can NOT receive
+#   config.json from this repo. The fix is a CUSTOM image (see Dockerfile
+#   in this folder: FROM xray-core + COPY config.json), pushed to a public
+#   ghcr.io repo, and referenced below as image.name.
+#
+# PORT (also per the docs):
+# - No web.commands.start is set, so the image's own ENTRYPOINT runs
+#   (xray run -c /etc/xray/config.json) and xray listens on fixed port
+#   8080. The docs say: "$PORT typically matches the port exposed by the
+#   image" when the default start command is used. Do NOT set
+#   web.commands.start: it would change $PORT to a platform-assigned
+#   value, and the xray image has no /bin/sh to expand it (proven by the
+#   Cloady failure: RUN chmod died on "no /bin/sh").
+#
+# ROUTES: a single app gets a default route automatically, so no
+# routes.yaml is needed. Public domain is obtained after deploy with
+# `upsun url` / `upsun routes` (pattern:
+# https://main-<PROJECT_ID>.us.platformsh.site, TLS automatic).
+#
+# RESOURCES: first deployment defaults to minimal (0.5 CPU, 512 MB disk,
+# 1408 MB RAM) — plenty for xray. No resources are set here on purpose.
+applications:
+  xray-core:
+    type: docker:1
+    image:
+      name: ghcr.io/winkibo22-commits/xray-core:latest
